@@ -4,6 +4,6 @@
 Aplicación para gestionar tareas con notificaciones.
 
 ## Tecnologías
-- HTML
-- CSS
-- JavaScript
+- Flutter
+- Dart
+- SQLite
