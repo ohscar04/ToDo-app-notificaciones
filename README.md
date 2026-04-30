@@ -1,0 +1,9 @@
+# App To-Do con Notificaciones
+
+## Descripción
+Aplicación para gestionar tareas con notificaciones.
+
+## Tecnologías
+- HTML
+- CSS
+- JavaScript
