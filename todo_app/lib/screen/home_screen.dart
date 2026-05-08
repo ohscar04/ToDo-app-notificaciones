@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../database/db_helper.dart';
 import '../models/task.dart';
+import 'add_task_screen.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -17,72 +21,84 @@ class _HomeScreenState extends State<HomeScreen> {
     loadTasks();
   }
 
-  loadTasks() async {
-    tasks = await db.getTasks();
-    setState(() {});
+  // 🔄 Cargar tareas
+  void loadTasks() async {
+    final data = await db.getTasks();
+    debugPrint("DATOS BD: ${data.length}");
+    setState(() {
+      tasks = data;
+    });
   }
 
- Future<void> addTask() async {
-    Task newTask = Task(
-      title: "Nueva tarea",
-      description: "Descripción",
-    );
-
-    await db.insertTask(newTask);
-    loadTasks();
+  // 🔔 Notificación simulada
+  Future<void> showNotification(String title, String body) async {
+    debugPrint("Notificación: $title - $body");
   }
 
   @override
   Widget build(BuildContext context) {
-    Future<void> showNotification(String title, String body) async {
-  // Aquí puedes agregar la lógica de flutter_local_notifications después
-  print("Notificación: $title - $body");
-}
     return Scaffold(
       appBar: AppBar(
-        title: Text("Mis tareas"),
+        title: const Text("Mis tareas"),
       ),
-      body: ListView.builder(
-        itemCount: tasks.length,
-        itemBuilder: (_, i) {
-          final task = tasks[i];
 
-          return Card(
-            color: Colors.grey[200],
-            margin: EdgeInsets.all(8),
-            child: ListTile(
-              title: Text(task.title),
-              subtitle: Text(task.description),
-              trailing: Checkbox(
-                value: task.isDone == 1,
-                onChanged: (value) async {
-                  task.isDone = value! ? 1 : 0;
-                  await db.updateTask(task);
-                  loadTasks();
-                },
-              ),
-              onLongPress: () async {
-                await db.deleteTask(task.id!);
-                loadTasks();
+      body: tasks.isEmpty
+          ? const Center(child: Text("No hay tareas"))
+          : ListView.builder(
+              itemCount: tasks.length,
+              itemBuilder: (_, i) {
+                final task = tasks[i];
+
+                return Card(
+                  margin: const EdgeInsets.all(8),
+                  child: ListTile(
+                    title: Text(task.title),
+                    subtitle: Text(task.description),
+
+                    trailing: Checkbox(
+                      value: task.isDone == 1,
+                      onChanged: (value) async {
+                        task.isDone = value! ? 1 : 0;
+                        await db.updateTask(task);
+                        loadTasks();
+
+                        await showNotification(
+                          "Tarea actualizada",
+                          task.title,
+                        );
+                      },
+                    ),
+
+                    onLongPress: () async {
+                      await db.deleteTask(task.id!);
+                      loadTasks();
+
+                      await showNotification(
+                        "Tarea eliminada",
+                        task.title,
+                      );
+                    },
+                  ),
+                );
               },
             ),
-          );
-        },
-      ),
-  floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF1565C0),
-        onPressed: () async {
-          // Primero ejecutamos tu función de agregar tarea
-          await addTask(); 
-          
-          // Luego lanzamos la notificación
-          await showNotification(
-            "Nueva tarea",
-            "Has agregado una tarea",
-          );
-        },
+
+      floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
+
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => AddTaskScreen()),
+          );
+
+          debugPrint("RESULTADO: $result");
+
+          if (result == true) {
+            loadTasks();
+          }
+        },
       ),
-    ); // Este es el cierre del Scaffold
+    );
   }
 }
